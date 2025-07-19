@@ -6,12 +6,14 @@ import {
   FlatList,
   Modal,
   Text,
-  Alert,
+  Linking,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 
 import { LinkStorage, linkStorage } from "@/src/storage/link-storage";
+
+import { Alert } from "@/src/utils/alerts";
 
 import { styles } from "./styles";
 import { colors } from "@/src/styles/colors";
@@ -20,12 +22,15 @@ import { categories } from "@/src/utils/categories";
 import { Link } from "@/src/components/link";
 import { Option } from "@/src/components/option";
 import { Categories } from "@/src/components/categories";
+import { Alert as ModalAlert } from "@/src/components/alert";
 
 export default function Index() {
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [link, setLink] = useState<LinkStorage>({} as LinkStorage);
   const [links, setLinks] = useState<Array<LinkStorage>>([]);
   const [category, setCategory] = useState<string>(categories[0].name);
 
-  const getLinks = async (): Promise<void> => {
+  async function getLinks(): Promise<void> {
     try {
       const storage = await linkStorage.get();
       const filtered = storage.filter((link) => link.category === category);
@@ -33,7 +38,41 @@ export default function Index() {
     } catch (error) {
       Alert.alert("Links", "Não foi possível listar os links");
     }
-  };
+  }
+
+  function handleDetails(selected: LinkStorage): void {
+    setShowModal(true);
+    setLink(selected);
+  }
+
+  async function linkRemove() {
+    try {
+      await linkStorage.remove(link.id);
+
+      getLinks();
+      setShowModal(false);
+    } catch (error) {
+      Alert.alert("Error", "Não foi possível excluir");
+      console.log(error);
+    }
+  }
+
+  function handleRemove() {
+    Alert.alert("Excluir", "Deseja realmente excluir?", [
+      { text: "Não" },
+      { text: "Sim", onPress: linkRemove },
+    ]);
+  }
+
+  async function handleOpen() {
+    try {
+      await Linking.openURL(link.url);
+      setShowModal(false);
+    } catch (error) {
+      Alert.alert("Error", "Não foi possível abri o link");
+      console.log(error);
+    }
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -61,7 +100,7 @@ export default function Index() {
           <Link
             name={item.name}
             url={item.url}
-            onDetails={() => console.log("clickou")}
+            onDetails={() => handleDetails(item)}
           />
         )}
         style={styles.links}
@@ -69,12 +108,12 @@ export default function Index() {
         showsVerticalScrollIndicator={false}
       />
 
-      <Modal transparent visible={false}>
+      <Modal transparent visible={showModal} animationType="slide">
         <View style={styles.modal}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalCategory}>Curso</Text>
-              <TouchableOpacity>
+              <Text style={styles.modalCategory}>{link.category}</Text>
+              <TouchableOpacity onPress={() => setShowModal(false)}>
                 <MaterialIcons
                   name="close"
                   size={20}
@@ -83,16 +122,22 @@ export default function Index() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalLinkName}>Rocketseatc</Text>
-            <Text style={styles.modalUrl}>https://rocketseat.com.br/</Text>
+            <Text style={styles.modalLinkName}>{link.name}</Text>
+            <Text style={styles.modalUrl}>{link.url}</Text>
 
             <View style={styles.modalFooter}>
-              <Option name="Excluir" icon="delete" variant="secondary" />
-              <Option name="Abrir" icon="language" />
+              <Option
+                name="Excluir"
+                icon="delete"
+                variant="secondary"
+                onPress={handleRemove}
+              />
+              <Option name="Abrir" icon="language" onPress={handleOpen} />
             </View>
           </View>
         </View>
       </Modal>
+      <ModalAlert />
     </View>
   );
 }

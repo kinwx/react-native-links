@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import { linkStorage } from "@/src/storage/link-storage";
+
+import { Alert } from "@/src/utils/alerts";
 
 import { styles } from "./styles";
 import { colors } from "@/src/styles/colors";
@@ -11,6 +13,7 @@ import { colors } from "@/src/styles/colors";
 import { Categories } from "@/src/components/categories";
 import { Input } from "@/src/components/input";
 import { Button } from "@/src/components/button";
+import { Alert as ModalAlert } from "@/src/components/alert";
 
 export default function Add() {
   const [category, setCategory] = useState<string>("");
@@ -48,7 +51,7 @@ export default function Add() {
         <Text style={styles.title} children={"Novo"} />
       </View>
 
-      <Text style={styles.label}>Seleione uma categoria</Text>
+      <Text style={styles.label}>Selecione uma categoria</Text>
       <Categories onChange={setCategory} selected={category} />
 
       <View style={styles.form}>
@@ -61,6 +64,7 @@ export default function Add() {
         />
         <Button title="Adicionar" onPress={handleAdd} />
       </View>
+      <ModalAlert />
     </View>
   );
 }
